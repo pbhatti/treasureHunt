@@ -1,15 +1,16 @@
-// Game state
+// First, create the Supabase client
+const { createClient } = supabase;
+const supabaseUrl = 'https://daekibhvrbzvtnamvusv.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZWtpYmh2cmJ6dnRuYW12dXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyMzQ4MjgsImV4cCI6MjA1NzgxMDgyOH0.JbwDI6DYsnzjkNuKir04hClNs9LZxIS-4mEyX4cRnjw';
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+// Then define your game state
 let gameState = {
     coinsCollected: 0,
     treasuresFound: new Set(),
     isScanning: false,
     sessionId: null
 };
-
-// Initialize Supabase client
-const supabaseUrl = 'https://daekibhvrbzvtnamvusv.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZWtpYmh2cmJ6dnRuYW12dXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyMzQ4MjgsImV4cCI6MjA1NzgxMDgyOH0.JbwDI6DYsnzjkNuKir04hClNs9LZxIS-4mEyX4cRnjw';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 // DOM Elements
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -26,8 +27,14 @@ const qrContext = qrCanvas.getContext('2d');
 
 // Start button click handler
 startButton.addEventListener('click', async () => {
+    console.log('Start button clicked'); // Debug log
     welcomeScreen.style.display = 'none';
-    await startGame();
+    try {
+        await startGame();
+        console.log('Game started successfully'); // Debug log
+    } catch (error) {
+        console.error('Error starting game:', error); // Error logging
+    }
 });
 
 // Scan button click handler
@@ -37,8 +44,10 @@ scanButton.addEventListener('click', () => {
 
 // Initialize game
 async function startGame() {
+    console.log('Starting game...'); // Debug log
+    
     // Create new game session
-    const { data: session, error } = await supabase
+    const { data: session, error } = await supabaseClient
         .from('game_sessions')
         .insert([
             { 
@@ -55,13 +64,19 @@ async function startGame() {
     }
 
     gameState.sessionId = session.id;
+    console.log('Game session created:', session.id); // Debug log
 
     // Initialize MindAR
-    const sceneEl = document.querySelector('a-scene');
-    const arSystem = sceneEl.systems["mindar-image-system"];
-    
-    // Start AR
-    arSystem.start();
+    try {
+        const sceneEl = document.querySelector('a-scene');
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        
+        // Start AR
+        await arSystem.start();
+        console.log('AR system started'); // Debug log
+    } catch (error) {
+        console.error('Error starting AR:', error);
+    }
 }
 
 // QR Scanner Functions
@@ -122,7 +137,7 @@ async function handleQRScan(qrData) {
     gameState.treasuresFound.add(qrData);
     
     // Record treasure found in database
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('treasure_finds')
         .insert([
             {
@@ -220,7 +235,7 @@ async function collectCoin(coin) {
     coinCounter.textContent = `Coins: ${gameState.coinsCollected}/3`;
     
     // Record coin collection in database
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('coin_collections')
         .insert([
             {
@@ -246,7 +261,7 @@ async function collectCoin(coin) {
 // Show win screen
 async function showWinScreen() {
     // Update game session status
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('game_sessions')
         .update({ 
             status: 'completed',
