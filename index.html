@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AR Treasure Hunt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- A-Frame and Three.js -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://unpkg.com/three@0.162.0/build/three.min.js"></script>
+    <!-- MindAR -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+    <!-- jsQR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+        #start-button, #scan-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #coin-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: gold;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            z-index: 1000;
+        }
+        #qr-scanner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            z-index: 900;
+        }
+        #qr-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #scan-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            z-index: 901;
+        }
+        #scanning-ui {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 902;
+        }
+        .scanning-animation {
+            width: 250px;
+            height: 2px;
+            background: #4CAF50;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: scan 2s linear infinite;
+        }
+        .scanning-text {
+            margin-top: 280px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .scanning-tips {
+            margin-top: 10px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        @keyframes scan {
+            0% {
+                top: -125px;
+            }
+            100% {
+                top: 125px;
+            }
+        }
+        #scan-overlay {
+            border: 2px solid #4CAF50;
+            border-radius: 20px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+        #scan-button {
+            background: #4CAF50;
+            border-radius: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        #scan-button:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+        .treasure-found {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            animation: fadeInOut 2s forwards;
+            z-index: 1000;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .scanning-tips {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="welcome-screen">
+        <h1>AR Treasure Hunt</h1>
+        <p>Find 3 hidden treasures by scanning QR codes!</p>
+        <button id="start-button">Start Hunt</button>
+    </div>
+
+    <div id="coin-counter">Coins: 0/3</div>
+
+    <div id="qr-scanner">
+        <video id="qr-video" playsinline style="display: none;"></video>
+        <canvas id="qr-canvas"></canvas>
+        <div id="scan-overlay"></div>
+        <div id="scanning-ui">
+            <div class="scanning-animation"></div>
+            <div class="scanning-text">Scanning for treasure...</div>
+            <div class="scanning-tips">
+                Hold your camera steady and point it at a QR code
+            </div>
+        </div>
+        <button id="scan-button" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+            Cancel Scan
+        </button>
+    </div>
+
+    <!-- MindAR Scene -->
+    <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <!-- Assets -->
+        <a-assets>
+            <a-asset-item id="treasure-model" src="models/treasure_chest.gltf"></a-asset-item>
+            <a-asset-item id="coin-model" src="models/coin.gltf"></a-asset-item>
+            <audio id="coin-collect" src="sounds/coin-collect.mp3" preload="auto"></audio>
+            <audio id="treasure-open" src="sounds/treasure-open.mp3" preload="auto"></audio>
+            <audio id="victory" src="sounds/victory.mp3" preload="auto"></audio>
+        </a-assets>
+
+        <!-- Camera -->
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <!-- AR Content Container -->
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- AR content will be added here dynamically -->
+        </a-entity>
+    </a-scene>
+
+    <script src="js/game.js"></script>
+</body>
+</html> 

@@ -1,0 +1,20 @@
+{
+  "name": "ar-treasure-hunt",
+  "version": "1.0.0",
+  "description": "An outdoor AR treasure hunt game using WebXR",
+  "main": "index.js",
+  "scripts": {
+    "start": "http-server . -p 8080",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aframe": "^1.4.2",
+    "three": "^0.162.0",
+    "mind-ar": "^1.2.3",
+    "jsqr": "^1.4.0",
+    "@supabase/supabase-js": "^2.39.3"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+} 
