@@ -145,7 +145,10 @@ function stopQRScanner() {
 async function handleQRScan(qrData) {
     console.log('QR Code scanned:', qrData);
     
-    // Spawn the corresponding sphere based on QR code
+    // Stop scanning
+    stopQRScanner();
+    
+    // Spawn appropriate sphere
     switch(qrData) {
         case 'treasure1':
             spawnSphere('blue');
@@ -157,23 +160,36 @@ async function handleQRScan(qrData) {
             spawnSphere('yellow');
             break;
         default:
-            console.warn('Unknown QR code:', qrData);
-            return;
+            console.warn('Unknown treasure type:', qrData);
     }
-    
-    // Stop the QR scanner after successful scan
-    stopQRScanner();
 }
 
 // Add new function to spawn spheres
 function spawnSphere(color) {
-    const arEntity = document.querySelector('[mindar-image-target]');
-    const sphere = document.createElement('a-entity');
+    // Get the AR scene
+    const scene = document.querySelector('a-scene');
+    
+    // Create a new entity for the sphere
+    const sphere = document.createElement('a-sphere');
     
     // Set sphere properties
-    sphere.setAttribute('geometry', 'primitive: sphere; radius: 0.5');
-    sphere.setAttribute('material', `color: ${getColor(color)}; metalness: 0.5; roughness: 0.5`);
-    sphere.setAttribute('position', '0 0 -2'); // Position in front of QR code
+    sphere.setAttribute('radius', '0.5');
+    sphere.setAttribute('position', '0 0 -2');
+    
+    // Set color based on treasure type
+    switch(color) {
+        case 'blue':
+            sphere.setAttribute('material', 'color: #0000FF; metalness: 0.5; roughness: 0.5');
+            break;
+        case 'green':
+            sphere.setAttribute('material', 'color: #00FF00; metalness: 0.5; roughness: 0.5');
+            break;
+        case 'yellow':
+            sphere.setAttribute('material', 'color: #FFFF00; metalness: 0.5; roughness: 0.5');
+            break;
+    }
+    
+    // Add rotation animation
     sphere.setAttribute('animation', {
         property: 'rotation',
         to: '0 360 0',
@@ -181,17 +197,9 @@ function spawnSphere(color) {
         dur: 2000
     });
     
-    arEntity.appendChild(sphere);
-}
-
-// Helper function to get color values
-function getColor(colorName) {
-    const colors = {
-        'blue': '#0000FF',
-        'green': '#00FF00',
-        'yellow': '#FFFF00'
-    };
-    return colors[colorName] || '#FFFFFF';
+    // Add to scene
+    scene.appendChild(sphere);
+    console.log('Sphere added to scene:', color);
 }
 
 // Spawn AR treasure
