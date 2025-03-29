@@ -27,14 +27,16 @@ const qrContext = qrCanvas.getContext('2d');
 
 // Start button click handler
 startButton.addEventListener('click', async () => {
-    console.log('Start button clicked'); // Debug log
+    // Reset game state
+    gameState = {
+        coinsCollected: 0,
+        treasuresFound: new Set(),
+        isScanning: false,
+        sessionId: null
+    };
+    
     welcomeScreen.style.display = 'none';
-    try {
-        await startGame();
-        console.log('Game started successfully'); // Debug log
-    } catch (error) {
-        console.error('Error starting game:', error); // Error logging
-    }
+    await startGame();
 });
 
 // Scan button click handler
@@ -130,36 +132,32 @@ function scanQRCode() {
 
 // QR Code scanning handler
 async function handleQRScan(qrData) {
-    try {
-        console.log('QR Code scanned:', qrData);
-        
-        if (gameState.treasuresFound.has(qrData)) {
-            alert('Already found this treasure!');
-            return;
-        }
-
-        gameState.treasuresFound.add(qrData);
-        
-        const { error } = await supabaseClient.from('treasure_finds').insert([
-            {
-                session_id: gameState.sessionId,
-                qr_code: qrData,
-                found_at: new Date().toISOString()
-            }
-        ]);
-
-        if (error) {
-            console.error('Supabase error:', error);
-            alert('Error saving treasure: ' + error.message);
-            return;
-        }
-
-        alert('New treasure found!');
-        spawnTreasure(qrData);
-    } catch (error) {
-        console.error('Error in handleQRScan:', error);
-        alert('Error processing QR code: ' + error.message);
+    console.log('QR Code scanned:', qrData);
+    console.log('Already found treasures:', Array.from(gameState.treasuresFound));
+    
+    if (gameState.treasuresFound.has(qrData)) {
+        alert('Already found this treasure!');
+        return;
     }
+
+    gameState.treasuresFound.add(qrData);
+    
+    const { error } = await supabaseClient.from('treasure_finds').insert([
+        {
+            session_id: gameState.sessionId,
+            qr_code: qrData,
+            found_at: new Date().toISOString()
+        }
+    ]);
+
+    if (error) {
+        console.error('Supabase error:', error);
+        alert('Error saving treasure: ' + error.message);
+        return;
+    }
+
+    alert('New treasure found!');
+    spawnTreasure(qrData);
 }
 
 // Spawn AR treasure
@@ -167,50 +165,53 @@ function spawnTreasure(qrData) {
     const arEntity = document.querySelector('[mindar-image-target]');
     const treasure = document.createElement('a-entity');
     
-    // Set treasure properties
-    treasure.setAttribute('gltf-model', '#treasure-model');
+    // Set common properties
     treasure.setAttribute('position', '0 0 0');
-    treasure.setAttribute('scale', '0.5 0.5 0.5');
-    treasure.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 2000');
+    treasure.setAttribute('mixin', 'sphere-common');
     
-    // Add click handler for treasure
+    // Set specific properties based on QR code
+    switch(qrData) {
+        case 'treasure1':
+            treasure.setAttribute('mixin', 'sphere-common blue-sphere');
+            break;
+        case 'treasure2':
+            treasure.setAttribute('mixin', 'sphere-common green-sphere');
+            break;
+        case 'treasure3':
+            treasure.setAttribute('mixin', 'sphere-common yellow-sphere');
+            break;
+        default:
+            console.warn('Unknown treasure type:', qrData);
+            return;
+    }
+    
+    // Add animation
+    treasure.setAttribute('animation', {
+        property: 'rotation',
+        to: '0 360 0',
+        loop: true,
+        dur: 2000
+    });
+    
+    // Add click handler
     treasure.addEventListener('click', () => {
         openTreasure(treasure);
     });
 
     arEntity.appendChild(treasure);
-
-    addTreasureInteractions(treasure);
-    
-    // Add glow effect
-    const glow = document.createElement('a-entity');
-    glow.setAttribute('geometry', 'primitive: sphere; radius: 0.6');
-    glow.setAttribute('material', 'shader: standard; opacity: 0.2; color: #FFD700; emissive: #FFD700');
-    glow.setAttribute('animation', 'property: material.opacity; from: 0.2; to: 0.4; dur: 1000; loop: true; dir: alternate');
-    treasure.appendChild(glow);
-    
-    return treasure;
 }
 
 // Handle treasure opening
 function openTreasure(treasure) {
-    sounds.treasureOpen.play();
-    // Add sparkle effect
-    const sparkles = document.createElement('a-entity');
-    sparkles.setAttribute('particle-system', {
-        preset: 'sparkle',
-        particleCount: 20,
-        size: 0.1,
-        color: '#FFD700,#FFA500',
-        duration: 1,
-        velocity: 0.5
+    // Add bounce animation
+    treasure.setAttribute('animation', {
+        property: 'position',
+        to: '0 1 0',
+        dur: 1000,
+        easing: 'easeOutBounce'
     });
-    treasure.appendChild(sparkles);
     
-    // Play opening animation
-    treasure.setAttribute('animation', 'property: rotation; to: 0 0 -90; dur: 1000');
-    
-    // Spawn coin after delay
+    // Spawn coin after animation
     setTimeout(() => {
         spawnCoin(treasure);
     }, 1000);
@@ -221,12 +222,16 @@ function spawnCoin(treasure) {
     const arEntity = document.querySelector('[mindar-image-target]');
     const coin = document.createElement('a-entity');
     
-    coin.setAttribute('gltf-model', '#coin-model');
-    coin.setAttribute('position', '0 1 0');
-    coin.setAttribute('scale', '0.3 0.3 0.3');
-    coin.setAttribute('animation', 'property: position; to: 0 2 0; loop: true; dir: alternate; dur: 1000');
+    coin.setAttribute('geometry', 'primitive: cylinder; radius: 0.2; height: 0.02');
+    coin.setAttribute('material', 'color: #FFD700; metalness: 1.0; roughness: 0.2');
+    coin.setAttribute('position', '0 1.5 0');
+    coin.setAttribute('animation', {
+        property: 'rotation',
+        to: '0 360 0',
+        loop: true,
+        dur: 1000
+    });
     
-    // Add click handler for coin
     coin.addEventListener('click', () => {
         collectCoin(coin);
     });
@@ -377,35 +382,6 @@ function createCoinParticles(position) {
     document.querySelector('a-scene').appendChild(particleSystem);
     setTimeout(() => particleSystem.remove(), 1000);
 }
-
-// Update the spawnTreasure function
-const originalSpawnTreasure = spawnTreasure;
-spawnTreasure = function(qrData) {
-    const treasure = originalSpawnTreasure(qrData);
-    addTreasureInteractions(treasure);
-    
-    // Add glow effect
-    const glow = document.createElement('a-entity');
-    glow.setAttribute('geometry', 'primitive: sphere; radius: 0.6');
-    glow.setAttribute('material', 'shader: standard; opacity: 0.2; color: #FFD700; emissive: #FFD700');
-    glow.setAttribute('animation', 'property: material.opacity; from: 0.2; to: 0.4; dur: 1000; loop: true; dir: alternate');
-    treasure.appendChild(glow);
-    
-    return treasure;
-};
-
-// Update the collectCoin function
-const originalCollectCoin = collectCoin;
-collectCoin = async function(coin) {
-    sounds.coinCollect.play();
-    const position = coin.getAttribute('position');
-    createCoinParticles(position);
-    await originalCollectCoin(coin);
-    
-    if (gameState.coinsCollected >= 3) {
-        sounds.victory.play();
-    }
-};
 
 // Add sound effects
 function createAudioElements() {
