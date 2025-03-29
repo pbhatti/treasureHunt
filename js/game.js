@@ -84,29 +84,28 @@ async function startGame() {
 // QR Scanner Functions
 async function startQRScanner() {
     try {
+        console.log('Starting QR scanner...');
         videoStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "environment" }
+            video: { 
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
         });
+        
         qrVideo.srcObject = videoStream;
-        qrVideo.play();
+        qrVideo.style.display = 'block'; // Make sure video is visible
+        await qrVideo.play();
         
         qrScanner.style.display = 'block';
         gameState.isScanning = true;
         
-        // Start scanning loop
-        requestAnimationFrame(scanQRCode);
+        // Start the scanning loop
+        scanQRCode();
     } catch (error) {
         console.error('Error accessing camera:', error);
+        alert('Error accessing camera. Please make sure camera permissions are granted.');
     }
-}
-
-function stopQRScanner() {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-    qrScanner.style.display = 'none';
-    gameState.isScanning = false;
 }
 
 function scanQRCode() {
@@ -121,13 +120,25 @@ function scanQRCode() {
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         
         if (code) {
+            console.log('QR Code found:', code.data);
             handleQRScan(code.data);
             stopQRScanner();
             return;
         }
     }
     
+    // Important: Request the next frame
     requestAnimationFrame(scanQRCode);
+}
+
+function stopQRScanner() {
+    gameState.isScanning = false;
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    qrVideo.srcObject = null;
+    qrScanner.style.display = 'none';
 }
 
 // QR Code scanning handler
@@ -351,7 +362,13 @@ scanTreasureButton.style.cssText = `
     cursor: pointer;
     z-index: 1000;
 `;
-scanTreasureButton.addEventListener('click', startQRScanner);
+scanTreasureButton.addEventListener('click', () => {
+    if (gameState.isScanning) {
+        stopQRScanner();
+    } else {
+        startQRScanner();
+    }
+});
 document.body.appendChild(scanTreasureButton);
 
 // Make treasure interactive with touch gestures
