@@ -166,20 +166,61 @@ async function handleQRScan(qrData) {
 
 // Add new function to spawn spheres
 function spawnSphere(color) {
-    // Create a basic scene setup
     const scene = document.querySelector('a-scene');
     const sphere = document.createElement('a-sphere');
     
-    // Set basic properties
-    sphere.setAttribute('radius', '0.2');
-    // Position it in front of the camera
-    sphere.setAttribute('position', '0 0 -1');
-    // Set color
-    sphere.setAttribute('color', color === 'blue' ? '#0000FF' : 
-                                color === 'green' ? '#00FF00' : '#FFFF00');
+    // Increased size and more prominent position
+    sphere.setAttribute('radius', '0.5'); // Made much bigger
+    sphere.setAttribute('position', '0 0 -3'); // Moved further back to be more visible
     
-    // Add to scene directly
+    // More vibrant colors and material properties
+    const colors = {
+        'blue': '#0066FF',
+        'green': '#00FF66',
+        'yellow': '#FFFF00'
+    };
+    
+    sphere.setAttribute('material', {
+        color: colors[color],
+        metalness: 0.3,
+        roughness: 0.4,
+        emissive: colors[color],
+        emissiveIntensity: 0.5,
+        opacity: 0.9
+    });
+    
+    // Add glow effect
+    const glow = document.createElement('a-sphere');
+    glow.setAttribute('radius', '0.6'); // Slightly larger than main sphere
+    glow.setAttribute('position', '0 0 -3');
+    glow.setAttribute('material', {
+        color: colors[color],
+        opacity: 0.3,
+        transparent: true
+    });
+    
+    // Add animations to make it more noticeable
+    sphere.setAttribute('animation__rotate', {
+        property: 'rotation',
+        to: '0 360 0',
+        loop: true,
+        dur: 3000,
+        easing: 'linear'
+    });
+    
+    sphere.setAttribute('animation__scale', {
+        property: 'scale',
+        from: '1 1 1',
+        to: '1.2 1.2 1.2',
+        loop: true,
+        dir: 'alternate',
+        dur: 1000,
+        easing: 'easeInOutQuad'
+    });
+    
+    scene.appendChild(glow);
     scene.appendChild(sphere);
+    console.log('Large sphere added to scene:', color);
 }
 
 // Spawn AR treasure
