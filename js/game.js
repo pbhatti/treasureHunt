@@ -166,42 +166,20 @@ async function handleQRScan(qrData) {
 
 // Add new function to spawn spheres
 function spawnSphere(color) {
-    const arEntity = document.querySelector('[mindar-image-target]');
+    // Create a basic scene setup
+    const scene = document.querySelector('a-scene');
     const sphere = document.createElement('a-sphere');
     
-    // Make sphere more visible
-    sphere.setAttribute('radius', '0.5');
-    sphere.setAttribute('position', '0 0.5 0'); // Raised higher above target
-    sphere.setAttribute('material', {
-        color: color === 'blue' ? '#0000FF' : 
-               color === 'green' ? '#00FF00' : '#FFFF00',
-        metalness: 0.7,
-        roughness: 0.3,
-        emissive: color === 'blue' ? '#000066' : 
-                  color === 'green' ? '#006600' : '#666600',
-        emissiveIntensity: 0.5
-    });
+    // Set basic properties
+    sphere.setAttribute('radius', '0.2');
+    // Position it in front of the camera
+    sphere.setAttribute('position', '0 0 -1');
+    // Set color
+    sphere.setAttribute('color', color === 'blue' ? '#0000FF' : 
+                                color === 'green' ? '#00FF00' : '#FFFF00');
     
-    // Add more noticeable animation
-    sphere.setAttribute('animation__rotate', {
-        property: 'rotation',
-        to: '0 360 0',
-        loop: true,
-        dur: 3000,
-        easing: 'linear'
-    });
-    
-    sphere.setAttribute('animation__float', {
-        property: 'position',
-        to: '0 0.7 0',
-        dir: 'alternate',
-        dur: 2000,
-        loop: true,
-        easing: 'easeInOutQuad'
-    });
-
-    arEntity.appendChild(sphere);
-    console.log('Enhanced sphere added to AR entity:', color);
+    // Add to scene directly
+    scene.appendChild(sphere);
 }
 
 // Spawn AR treasure
