@@ -133,31 +133,54 @@ function scanQRCode() {
 // QR Code scanning handler
 async function handleQRScan(qrData) {
     console.log('QR Code scanned:', qrData);
-    console.log('Already found treasures:', Array.from(gameState.treasuresFound));
     
-    if (gameState.treasuresFound.has(qrData)) {
-        alert('Already found this treasure!');
-        return;
+    // Spawn the corresponding sphere based on QR code
+    switch(qrData) {
+        case 'treasure1':
+            spawnSphere('blue');
+            break;
+        case 'treasure2':
+            spawnSphere('green');
+            break;
+        case 'treasure3':
+            spawnSphere('yellow');
+            break;
+        default:
+            console.warn('Unknown QR code:', qrData);
+            return;
     }
-
-    gameState.treasuresFound.add(qrData);
     
-    const { error } = await supabaseClient.from('treasure_finds').insert([
-        {
-            session_id: gameState.sessionId,
-            qr_code: qrData,
-            found_at: new Date().toISOString()
-        }
-    ]);
+    // Stop the QR scanner after successful scan
+    stopQRScanner();
+}
 
-    if (error) {
-        console.error('Supabase error:', error);
-        alert('Error saving treasure: ' + error.message);
-        return;
-    }
+// Add new function to spawn spheres
+function spawnSphere(color) {
+    const arEntity = document.querySelector('[mindar-image-target]');
+    const sphere = document.createElement('a-entity');
+    
+    // Set sphere properties
+    sphere.setAttribute('geometry', 'primitive: sphere; radius: 0.5');
+    sphere.setAttribute('material', `color: ${getColor(color)}; metalness: 0.5; roughness: 0.5`);
+    sphere.setAttribute('position', '0 0 -2'); // Position in front of QR code
+    sphere.setAttribute('animation', {
+        property: 'rotation',
+        to: '0 360 0',
+        loop: true,
+        dur: 2000
+    });
+    
+    arEntity.appendChild(sphere);
+}
 
-    alert('New treasure found!');
-    spawnTreasure(qrData);
+// Helper function to get color values
+function getColor(colorName) {
+    const colors = {
+        'blue': '#0000FF',
+        'green': '#00FF00',
+        'yellow': '#FFFF00'
+    };
+    return colors[colorName] || '#FFFFFF';
 }
 
 // Spawn AR treasure
