@@ -1,16 +1,16 @@
-// First, create the Supabase client
-const { createClient } = supabase;
-const supabaseUrl = 'https://daekibhvrbzvtnamvusv.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZWtpYmh2cmJ6dnRuYW12dXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyMzQ4MjgsImV4cCI6MjA1NzgxMDgyOH0.JbwDI6DYsnzjkNuKir04hClNs9LZxIS-4mEyX4cRnjw';
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-// Then define your game state
+// Game state
 let gameState = {
     coinsCollected: 0,
     treasuresFound: new Set(),
     isScanning: false,
     sessionId: null
 };
+
+// Initialize Supabase client
+const { createClient } = supabase;
+const supabaseUrl = 'https://daekibhvrbzvtnamvusv.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZWtpYmh2cmJ6dnRuYW12dXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIyMzQ4MjgsImV4cCI6MjA1NzgxMDgyOH0.JbwDI6DYsnzjkNuKir04hClNs9LZxIS-4mEyX4cRnjw';
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // DOM Elements
 const welcomeScreen = document.getElementById('welcome-screen');
@@ -169,11 +169,11 @@ function spawnSphere(color) {
     const scene = document.querySelector('a-scene');
     const sphere = document.createElement('a-sphere');
     
-    // Increased size and more prominent position
-    sphere.setAttribute('radius', '0.5'); // Made much bigger
-    sphere.setAttribute('position', '0 0 -3'); // Moved further back to be more visible
+    // Large, visible sphere
+    sphere.setAttribute('radius', '1'); // Even bigger
+    sphere.setAttribute('position', '0 0 -5'); // Further back
     
-    // More vibrant colors and material properties
+    // Vibrant materials
     const colors = {
         'blue': '#0066FF',
         'green': '#00FF66',
@@ -182,45 +182,31 @@ function spawnSphere(color) {
     
     sphere.setAttribute('material', {
         color: colors[color],
-        metalness: 0.3,
-        roughness: 0.4,
+        metalness: 0.7,
+        roughness: 0.3,
         emissive: colors[color],
-        emissiveIntensity: 0.5,
-        opacity: 0.9
+        emissiveIntensity: 0.8
     });
     
-    // Add glow effect
-    const glow = document.createElement('a-sphere');
-    glow.setAttribute('radius', '0.6'); // Slightly larger than main sphere
-    glow.setAttribute('position', '0 0 -3');
-    glow.setAttribute('material', {
-        color: colors[color],
-        opacity: 0.3,
-        transparent: true
-    });
-    
-    // Add animations to make it more noticeable
+    // Animations
     sphere.setAttribute('animation__rotate', {
         property: 'rotation',
         to: '0 360 0',
         loop: true,
-        dur: 3000,
-        easing: 'linear'
+        dur: 3000
     });
     
-    sphere.setAttribute('animation__scale', {
-        property: 'scale',
-        from: '1 1 1',
-        to: '1.2 1.2 1.2',
-        loop: true,
+    sphere.setAttribute('animation__float', {
+        property: 'position',
+        from: '0 0 -5',
+        to: '0 0.5 -5',
         dir: 'alternate',
-        dur: 1000,
-        easing: 'easeInOutQuad'
+        loop: true,
+        dur: 2000
     });
-    
-    scene.appendChild(glow);
+
     scene.appendChild(sphere);
-    console.log('Large sphere added to scene:', color);
+    console.log('Large sphere added:', color);
 }
 
 // Spawn AR treasure
