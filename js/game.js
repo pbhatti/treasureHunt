@@ -130,16 +130,17 @@ function scanQRCode() {
 
 // QR Code scanning handler
 async function handleQRScan(qrData) {
-    if (gameState.treasuresFound.has(qrData)) {
-        return; // Already found this treasure
-    }
+    try {
+        console.log('QR Code scanned:', qrData);
+        
+        if (gameState.treasuresFound.has(qrData)) {
+            alert('Already found this treasure!');
+            return;
+        }
 
-    gameState.treasuresFound.add(qrData);
-    
-    // Record treasure found in database
-    const { error } = await supabaseClient
-        .from('treasure_finds')
-        .insert([
+        gameState.treasuresFound.add(qrData);
+        
+        const { error } = await supabaseClient.from('treasure_finds').insert([
             {
                 session_id: gameState.sessionId,
                 qr_code: qrData,
@@ -147,11 +148,18 @@ async function handleQRScan(qrData) {
             }
         ]);
 
-    if (error) {
-        console.error('Error recording treasure find:', error);
-    }
+        if (error) {
+            console.error('Supabase error:', error);
+            alert('Error saving treasure: ' + error.message);
+            return;
+        }
 
-    spawnTreasure(qrData);
+        alert('New treasure found!');
+        spawnTreasure(qrData);
+    } catch (error) {
+        console.error('Error in handleQRScan:', error);
+        alert('Error processing QR code: ' + error.message);
+    }
 }
 
 // Spawn AR treasure
