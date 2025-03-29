@@ -166,40 +166,42 @@ async function handleQRScan(qrData) {
 
 // Add new function to spawn spheres
 function spawnSphere(color) {
-    // Get the MindAR entity that tracks the target
     const arEntity = document.querySelector('[mindar-image-target]');
-    
-    // Create sphere
     const sphere = document.createElement('a-sphere');
     
-    // Set sphere properties
-    sphere.setAttribute('radius', '0.2'); // Made smaller for better visibility
-    sphere.setAttribute('position', '0 0.1 0'); // Slightly above the target
+    // Make sphere more visible
+    sphere.setAttribute('radius', '0.5');
+    sphere.setAttribute('position', '0 0.5 0'); // Raised higher above target
+    sphere.setAttribute('material', {
+        color: color === 'blue' ? '#0000FF' : 
+               color === 'green' ? '#00FF00' : '#FFFF00',
+        metalness: 0.7,
+        roughness: 0.3,
+        emissive: color === 'blue' ? '#000066' : 
+                  color === 'green' ? '#006600' : '#666600',
+        emissiveIntensity: 0.5
+    });
     
-    // Set color based on treasure type
-    switch(color) {
-        case 'blue':
-            sphere.setAttribute('material', 'color: #0000FF; metalness: 0.5; roughness: 0.5');
-            break;
-        case 'green':
-            sphere.setAttribute('material', 'color: #00FF00; metalness: 0.5; roughness: 0.5');
-            break;
-        case 'yellow':
-            sphere.setAttribute('material', 'color: #FFFF00; metalness: 0.5; roughness: 0.5');
-            break;
-    }
-    
-    // Add rotation animation
-    sphere.setAttribute('animation', {
+    // Add more noticeable animation
+    sphere.setAttribute('animation__rotate', {
         property: 'rotation',
         to: '0 360 0',
         loop: true,
-        dur: 2000
+        dur: 3000,
+        easing: 'linear'
     });
     
-    // Add to AR entity instead of scene
+    sphere.setAttribute('animation__float', {
+        property: 'position',
+        to: '0 0.7 0',
+        dir: 'alternate',
+        dur: 2000,
+        loop: true,
+        easing: 'easeInOutQuad'
+    });
+
     arEntity.appendChild(sphere);
-    console.log('Sphere added to AR entity:', color);
+    console.log('Enhanced sphere added to AR entity:', color);
 }
 
 // Spawn AR treasure
