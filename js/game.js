@@ -166,15 +166,15 @@ async function handleQRScan(qrData) {
 
 // Add new function to spawn spheres
 function spawnSphere(color) {
-    // Get the AR scene
-    const scene = document.querySelector('a-scene');
+    // Get the MindAR entity that tracks the target
+    const arEntity = document.querySelector('[mindar-image-target]');
     
-    // Create a new entity for the sphere
+    // Create sphere
     const sphere = document.createElement('a-sphere');
     
     // Set sphere properties
-    sphere.setAttribute('radius', '0.5');
-    sphere.setAttribute('position', '0 0 -2');
+    sphere.setAttribute('radius', '0.2'); // Made smaller for better visibility
+    sphere.setAttribute('position', '0 0.1 0'); // Slightly above the target
     
     // Set color based on treasure type
     switch(color) {
@@ -197,9 +197,9 @@ function spawnSphere(color) {
         dur: 2000
     });
     
-    // Add to scene
-    scene.appendChild(sphere);
-    console.log('Sphere added to scene:', color);
+    // Add to AR entity instead of scene
+    arEntity.appendChild(sphere);
+    console.log('Sphere added to AR entity:', color);
 }
 
 // Spawn AR treasure
